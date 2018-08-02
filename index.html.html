@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Live Bus Info</title>
+    <script>
+
+
+      function initMap(){
+      console.log("map initialized")
+
+      }
+      </script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+      <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAMhEmmBB-HOAguDVPpr2VujTnCXKZJzrk&callback=initMap"></script>
+      <script>
+      $(document).ready(function(){
+
+        $.getJSON('busdata.json',function(data){
+          routes=data
+        })
+
+        var centre=new google.maps.LatLng(1.290270, 103.851959)
+        var map = new google.maps.Map(document.getElementById('map'), {
+        zoom:12,
+        center: centre,
+      });
+
+$("#fetch").on("click",function(){
+  route=$("#route").val()
+  direction=$("#direction").val()==undefined ? "one":$("#direction").val()
+  stops=[]
+
+  for( i in routes){
+    if(routes[i].ServiceNo==route){
+      //console.log(routes[i].Direction)
+      if(direction=="one" && (routes[i].Direction==1 || routes[i].Direction=="")){
+        console.log("one direction")
+        stops.push({"stopCode":routes[i].BusStopCode,"direction":routes[i].Direction})
+      }
+      else if(direction=="two" && (routes[i].Direction==2 || routes[i].Direction=="")){
+        console.log("two direction")
+        stops.push({"stopCode":routes[i].BusStopCode,"direction":routes[i].Direction})
+      }
+
+    }
+  }
+  displayMarkers(route,stops)
+})
+var markers=[]
+
+function clearMarkers(){
+  for(i in markers){
+    markers[i].setMap(null)
+  }
+  markers=[]
+}
+
+var icon_var_1 = {
+    url: "http://maps.google.com/mapfiles/kml/shapes/bus.png", // url
+    scaledSize: new google.maps.Size(20, 20), // scaled size
+    origin: new google.maps.Point(0,0), // origin
+    anchor: new google.maps.Point(0, 0) // anchor
+};
+var icon_var_2 = {
+    url: "http://maps.google.com/mapfiles/kml/shapes/icon9.png", // url
+    scaledSize: new google.maps.Size(20, 20), // scaled size
+    origin: new google.maps.Point(0,0), // origin
+    anchor: new google.maps.Point(0, 0) // anchor
+};
+function displayMarkers(route,route_1){
+    clearMarkers()
+    console.log(route_1)
+    for(i in route_1){
+      console.log(route_1[i].stopCode)
+      $.ajax  ({
+         url:'http://CORS-Anywhere.HerokuApp.com/http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?ServiceNo='+route+'&BusStopCode='+route_1[i].stopCode+'',
+         type: "GET",
+         crossOrigin:true,
+         beforeSend: function(xhr){xhr.setRequestHeader('accept', 'application/json');
+       xhr.setRequestHeader('AccountKey','RAGHPk3qTNC685iHir8V8w==');
+     xhr.setRequestHeader('Access-Control-Allow-Origin',"*")},
+         success: function(resp) {
+           //console.log(resp.Services)
+           if(resp.Services.length==0){
+             console.log("no current services")
+           }
+           else{
+             //console.log(resp.Services[0].NextBus)
+             //console.log(tabledata)
+             var infoWindow = new google.maps.InfoWindow();
+             var bounds = new google.maps.LatLngBounds();
+             var data={'stopCode':route_1[i].stopCode, 'direction':route_1[i].direction}
+             if(resp.Services[0].NextBus.Latitude!=0){
+               var loc=new google.maps.LatLng(resp.Services[0].NextBus.Latitude,
+             resp.Services[0].NextBus.Longitude)
+             //console.log(loc)
+             newmarker=true;
+             for(j=0;j<markers.length;j++){
+               //console.log(loc.lat())
+               if(markers[j].position.lat()==loc.lat()){
+                 console.log("marker already present")
+                 newmarker=false;
+               }
+             }
+               if(newmarker){
+                 console.log(route_1[i].direction)
+                 var marker = new google.maps.Marker({
+                   position:loc,
+                   map: map,
+                   icon:icon_var_1,
+                   title:route
+                 });
+                 bounds.extend(centre)
+                 google.maps.event.addListener(marker, 'click', (function(marker,data) {
+                       return function() {
+                           infoWindow.setContent("<h3> Moving from "+data.stopCode+"</h3><h6> Direction - "+data.direction+"</h6>");
+                           infoWindow.open(map, marker);
+                       }
+                   })(marker,data));
+                   markers.push(marker)
+               }
+
+
+             }
+           }
+
+//end of sucess function
+       }
+
+
+     });
+
+    }
+
+}
+
+      })
+      </script>
+<style>
+#map{
+  margin-top:10%;
+  width:100%;
+  height:700px;
+
+}
+</style>
+  </head>
+
+  <body>
+<div id="filter">
+<input type="text" id="route" placeholder="enter bus number">
+<select id="direction">
+  <option value="one" selected>A-B</option>
+  <option value="two">B-A</option>
+</select>
+<button id="fetch">Fetch?Update</button></div>
+<div id="map">
+
+</div>
+  </body>
+</html>
