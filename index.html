@@ -63,12 +63,7 @@ var icon_var_1 = {
     origin: new google.maps.Point(0,0), // origin
     anchor: new google.maps.Point(0, 0) // anchor
 };
-var icon_var_2 = {
-    url: "http://maps.google.com/mapfiles/kml/shapes/icon9.png", // url
-    scaledSize: new google.maps.Size(20, 20), // scaled size
-    origin: new google.maps.Point(0,0), // origin
-    anchor: new google.maps.Point(0, 0) // anchor
-};
+
 function displayMarkers(route,stops){
     if(globalCounter==0){
       clearMarkers()
@@ -112,7 +107,7 @@ function displayMarkers(route,stops){
                  var marker = new google.maps.Marker({
                    position:loc,
                    map: map,
-                   icon:stops[globalCounter].direction==1?icon_var_1:icon_var_2,
+                   icon:icon_var_1,
                    title:route
                  });
                  bounds.extend(centre)
