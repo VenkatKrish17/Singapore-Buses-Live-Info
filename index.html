@@ -12,12 +12,15 @@
       }
       </script>
       <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-      <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAMhEmmBB-HOAguDVPpr2VujTnCXKZJzrk&callback=initMap"></script>
+      <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB0cgUOM0UbWPR2Y9RLabxAF-Pa3wJk0Ew&callback=initMap"></script>
       <script>
       $(document).ready(function(){
 
         $.getJSON('busdata.json',function(data){
           routes=data
+        })
+        $.getJSON('busstopsname.json',function(data){
+          stopsname=data
         })
 
         var centre=new google.maps.LatLng(1.290270, 103.851959)
@@ -25,37 +28,35 @@
         zoom:12,
         center: centre,
       });
-
+globalCounter=0
 $("#fetch").on("click",function(){
   route=$("#route").val()
   direction=$("#direction").val()==undefined ? "one":$("#direction").val()
   stops=[]
-
   for( i in routes){
     if(routes[i].ServiceNo==route){
       //console.log(routes[i].Direction)
       if(direction=="one" && (routes[i].Direction==1 || routes[i].Direction=="")){
-        console.log("one direction")
+        //console.log("one direction"+routes[i].BusStopCode)
         stops.push({"stopCode":routes[i].BusStopCode,"direction":routes[i].Direction})
       }
       else if(direction=="two" && (routes[i].Direction==2 || routes[i].Direction=="")){
         console.log("two direction")
         stops.push({"stopCode":routes[i].BusStopCode,"direction":routes[i].Direction})
       }
-
     }
   }
+  globalCounter=0
+  console.log(stops)
   displayMarkers(route,stops)
 })
 var markers=[]
-
 function clearMarkers(){
   for(i in markers){
     markers[i].setMap(null)
   }
   markers=[]
 }
-
 var icon_var_1 = {
     url: "http://maps.google.com/mapfiles/kml/shapes/bus.png", // url
     scaledSize: new google.maps.Size(20, 20), // scaled size
@@ -68,13 +69,15 @@ var icon_var_2 = {
     origin: new google.maps.Point(0,0), // origin
     anchor: new google.maps.Point(0, 0) // anchor
 };
-function displayMarkers(route,route_1){
-    clearMarkers()
-    console.log(route_1)
-    for(i in route_1){
-      console.log(route_1[i].stopCode)
+function displayMarkers(route,stops){
+    if(globalCounter==0){
+      clearMarkers()
+    }
+    console.log(stops[globalCounter])
+    if(globalCounter<(stops.length-1)){
+      console.log(stops[globalCounter].stopCode)
       $.ajax  ({
-         url:'http://CORS-Anywhere.HerokuApp.com/http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?ServiceNo='+route+'&BusStopCode='+route_1[i].stopCode+'',
+         url:'http://CORS-Anywhere.HerokuApp.com/http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?ServiceNo='+route+'&BusStopCode='+stops[globalCounter].stopCode+'',
          type: "GET",
          crossOrigin:true,
          beforeSend: function(xhr){xhr.setRequestHeader('accept', 'application/json');
@@ -88,9 +91,10 @@ function displayMarkers(route,route_1){
            else{
              //console.log(resp.Services[0].NextBus)
              //console.log(tabledata)
+             console.log("getting markers ")
              var infoWindow = new google.maps.InfoWindow();
              var bounds = new google.maps.LatLngBounds();
-             var data={'stopCode':route_1[i].stopCode, 'direction':route_1[i].direction}
+             var data={'stopCode':stops[globalCounter].stopCode, 'direction':stops[globalCounter].direction}
              if(resp.Services[0].NextBus.Latitude!=0){
                var loc=new google.maps.LatLng(resp.Services[0].NextBus.Latitude,
              resp.Services[0].NextBus.Longitude)
@@ -104,17 +108,17 @@ function displayMarkers(route,route_1){
                }
              }
                if(newmarker){
-                 console.log(route_1[i].direction)
+                 console.log(stops[globalCounter].direction)
                  var marker = new google.maps.Marker({
                    position:loc,
                    map: map,
-                   icon:icon_var_1,
+                   icon:stops[globalCounter].direction==1?icon_var_1:icon_var_2,
                    title:route
                  });
                  bounds.extend(centre)
                  google.maps.event.addListener(marker, 'click', (function(marker,data) {
                        return function() {
-                           infoWindow.setContent("<h3> Moving from "+data.stopCode+"</h3><h6> Direction - "+data.direction+"</h6>");
+                           infoWindow.setContent("<h3> Moving towards "+stopsname[data.stopCode]+"</h3><h6> Direction - "+data.direction+"</h6>");
                            infoWindow.open(map, marker);
                        }
                    })(marker,data));
@@ -124,24 +128,25 @@ function displayMarkers(route,route_1){
 
              }
            }
-
-//end of sucess function
+          globalCounter+=1;
+          displayMarkers(route,stops)
        }
-
-
      });
-
     }
-
 }
 
       })
       </script>
 <style>
 #map{
-  margin-top:10%;
+  margin-top:4%;
   width:100%;
-  height:700px;
+  height:500px;
+
+}
+input,button,select{
+  width:30%;
+  height:30px;
 
 }
 </style>
