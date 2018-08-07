@@ -113,7 +113,7 @@ function displayMarkers(route,stops){
                  bounds.extend(centre)
                  google.maps.event.addListener(marker, 'click', (function(marker,data) {
                        return function() {
-                           infoWindow.setContent("<h3> Moving towards "+stopsname[data.stopCode]+"</h3><h6> Direction - "+data.direction+"</h6>");
+                           infoWindow.setContent("<img src='http://maps.google.com/mapfiles/kml/shapes/bus.png' width='20px' height='20px'><h3> Moving towards "+stopsname[data.stopCode]+"</h3><h4> Direction - "+data.direction+"</h4>");
                            infoWindow.open(map, marker);
                        }
                    })(marker,data));
